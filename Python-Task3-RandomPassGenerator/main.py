@@ -25,7 +25,7 @@ while True:
         use_symbols = use_symbols.lower() == "y"
 
 
-        selected_types = sum([use_upper, use_lower, use_number, use_symbols])
+        selected_types = sum((use_upper, use_lower, use_number, use_symbols))
         if selected_types < 2:
             print("A minimum of two selections are needed.")
             continue
