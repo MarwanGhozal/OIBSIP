@@ -3,22 +3,6 @@ import sys
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import (QApplication, QWidget, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout)
 
-#  while True:
-#     try:
-#         weight = float(input('Please enter your weight in kilograms: '))
-#         height = float(input('Please enter your height in meters: '))
-#         if weight <= 0 or height <= 0:
-#             print("Weight and height must be positive numbers. Please try again.")
-#             continue
-#         break
-#     except ValueError:
-#         print("Invalid input. Please enter numeric values for weight and height.")
-        
-# BMI = weight / (height ** 2)
-
-
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
