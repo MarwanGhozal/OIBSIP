@@ -3,17 +3,52 @@ import time
 import datetime as dt
 import webbrowser
 import pyttsx3
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+
+
 # Initialize recognizer class (for recognizing the speech)
 recognizer = sr.Recognizer()
 mic = sr.Microphone()
 userWantstoSearch = False
 
-search_triggers = [
-    "search",
-    "google",
-    "look up",
-    "find"
-]
+training_data = {
+    "greeting": ["hello", "hi there", "hey", "good morning"],
+    "time":     ["what time is it", "tell me the time", "current time please"],
+    "date":     ["what's the date", "what day is it today"],
+    "search":   ["search for", "look up", "google", "find information about"],
+}
+
+
+X_train, y_train = [], []
+for intent, phrases in training_data.items():
+    for phrase in phrases:
+        X_train.append(phrase)
+        y_train.append(intent)
+
+vectorizer = TfidfVectorizer()
+X_vectors = vectorizer.fit_transform(X_train)
+
+intent_model = LogisticRegression()
+intent_model.fit(X_vectors, y_train)
+
+
+def classify_intent(text, confidence_threshold=0.25):
+    vec = vectorizer.transform([text])
+    probabilities = intent_model.predict_proba(vec)[0]
+    best_index = probabilities.argmax()
+    confidence = probabilities[best_index]
+    if confidence < confidence_threshold:
+        return "unknown"
+    return intent_model.classes_[best_index]
+
+# search_triggers = [
+#     "search",
+#     "google",
+#     "look up",
+#     "find"
+# ]
 
 
 def callback(recognizer, audio):
@@ -27,15 +62,17 @@ def callback(recognizer, audio):
             webbrowser.open_new_tab(f"https://www.google.com/search?q={text}")
         else:
             print(f"Recognized audio: {text}")
-            if "hello" in text:
+            intent = classify_intent(text)
+            if intent == "greeting":
                 speak("Hello to you too!")
-            elif "date" in text:
+            elif intent == "date":
                 now = dt.date.today()
                 speak(f"Today's date is {now.strftime('%d-%m-%Y')}.")         
-            elif "time" in text:
+            elif intent == "time":
                 now = dt.datetime.now()
                 speak(f" The current time is {now.strftime('%H:%M:%S')}.")
-            elif any(trigger in text for trigger in search_triggers):
+            # elif any(trigger in text for trigger in search_triggers):
+            elif intent == "search":
                 speak("What would you like to search for?")
                 userWantstoSearch = True
 
