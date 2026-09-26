@@ -7,6 +7,12 @@ from urllib.parse import quote_plus
 import pyttsx3
 import pythoncom
 
+
+import json
+import subprocess
+from pathlib import Path
+
+
 import requests 
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -34,6 +40,29 @@ WEATHER_API_KEY = os.environ.get("GHOZAL_WEATHER_API_KEY")
 print("Weather API key loaded:", bool(WEATHER_API_KEY))
 print("Email App Password loaded:", bool(EMAIL_APP_PASSWORD))
 print("Email loaded:", bool(EMAIL_ADDRESS))
+
+BASE_DIR = Path(__file__).resolve().parent
+COMMANDS_FILE = BASE_DIR / "commands.json"
+
+
+def load_custom_commands():
+    if not COMMANDS_FILE.exists():
+        print("Custom commands file not found.")
+        return {}
+
+    try:
+        with open(COMMANDS_FILE, "r", encoding="utf-8") as file:
+            commands = json.load(file)
+
+        print(f"Custom commands loaded: {len(commands)}")
+        return commands
+
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"Custom commands error: {e}")
+        return {}
+
+
+custom_commands = load_custom_commands()
 
 
 recognizer = sr.Recognizer()
@@ -307,6 +336,42 @@ def answer_knowledge_question(text):
 
     return False
 
+def execute_custom_command(text):
+    text = text.lower().strip()
+
+    for command, details in custom_commands.items():
+        if text == command.lower():
+            command_type = details.get("type")
+            target = details.get("target")
+
+            if not target:
+                print(f"Custom command '{command}' has no target.")
+                return True
+
+            print(f"DEBUG: Executing custom command: {command}")
+
+            if command_type == "url":
+                webbrowser.open_new_tab(target)
+                speak(f"Opening {command}.")
+                return True
+
+            elif command_type == "program":
+                try:
+                    subprocess.Popen(target)
+                    speak(f"Executing {command}.")
+                except Exception as e:
+                    print(f"Custom command error: {e}")
+                    speak(f"Sorry, I couldn't open {command}.")
+
+                return True
+
+            else:
+                print(f"Unknown custom command type: {command_type}")
+                speak("Sorry, that custom command type is not supported.")
+                return True
+
+    return False
+
 def extract_reminder_minutes(text):
     match = REMINDER_PATTERN.search(text)
     return int(match.group(1)) if match else None
@@ -399,6 +464,8 @@ def callback(recognizer, audio):
 
         print(f"Recognized audio: {text}")
         print(f"DEBUG: Current state = {conversation_state}")
+        if execute_custom_command(text):
+            return
 
         intent = classify_intent(text)
 
