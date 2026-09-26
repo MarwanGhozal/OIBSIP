@@ -1,0 +1,14 @@
+{
+    "open youtube": {
+        "type": "url",
+        "target": "https://www.youtube.com"
+    },
+    "open github": {
+        "type": "url",
+        "target": "https://github.com"
+    },
+    "open calculator": {
+        "type": "program",
+        "target": "calc.exe"
+    }
+}
